@@ -1,5 +1,9 @@
 from app.config import CHUNK_SIZE, CHUNK_OVERLAP, MIN_CHUNK_LEN
 
+def is_toc_chunk(text):
+    """Table of contents lines look like 'Internal Voltage Reference . . . . . 43'.
+    They contain keywords but no real information, so they pollute search results."""
+    return text.count(". .") > 10
 
 def chunk_pages(pages, size=CHUNK_SIZE, overlap=CHUNK_OVERLAP):
     """Split each page's text into overlapping chunks. Each chunk keeps its page number."""
@@ -11,7 +15,8 @@ def chunk_pages(pages, size=CHUNK_SIZE, overlap=CHUNK_OVERLAP):
         for start in range(0, len(text), step):
             piece = text[start:start + size]
             # skip tiny scraps like page footers and part numbers
-            if len(piece) >= MIN_CHUNK_LEN:
+                        # skip tiny scraps and table of contents chunks
+            if len(piece) >= MIN_CHUNK_LEN and not is_toc_chunk(piece):
                 chunks.append({"page": p["page"], "text": piece})
             # this chunk already reached the end of the page,
             # so the next one would only repeat its tail
