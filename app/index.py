@@ -2,7 +2,7 @@ import numpy as np
 import faiss
 from sentence_transformers import SentenceTransformer
 
-from app.config import EMBED_MODEL
+from app.config import EMBED_MODEL, TOP_K
 
 # loaded once when this file is first imported (takes a few seconds)
 model = SentenceTransformer(EMBED_MODEL)
@@ -23,3 +23,14 @@ def build_index(chunks):
     index = faiss.IndexFlatIP(vecs.shape[1])
     index.add(vecs)
     return index
+
+def search(index, chunks, question, k=TOP_K):
+    """Return the k chunks most similar to the question, as (chunk, score) pairs, best first."""
+    scores, ids = index.search(embed([question]), k)
+    results = []
+    for score, i in zip(scores[0], ids[0]):
+        # FAISS uses -1 when the index has fewer than k vectors
+        if i == -1:
+            continue
+        results.append((chunks[i], float(score)))
+    return results
