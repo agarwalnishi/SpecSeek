@@ -2,9 +2,13 @@ import requests
 
 from app.config import OLLAMA_URL, OLLAMA_MODEL
 
-PROMPT_TEMPLATE = """You are a datasheet assistant. Answer the question using ONLY the datasheet excerpts below.
-Cite the page for every fact, like (Page 12).
-If the excerpts do not contain the answer, reply exactly: Not found in the datasheet.
+PROMPT_TEMPLATE = """Use the datasheet excerpts below to answer the question.
+Rules:
+- Answer in 1 to 3 sentences, using only facts from the excerpts.
+- After each fact, cite its page like (Page 12).
+- Only if none of the excerpts relate to the question, reply: Not found in the datasheet.
+
+Question: {question}
 
 Excerpts:
 {context}
