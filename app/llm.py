@@ -1,3 +1,4 @@
+import re
 import requests
 
 from app.config import OLLAMA_URL, OLLAMA_MODEL, SIMILARITY_THRESHOLD
@@ -39,17 +40,30 @@ def generate(prompt):
     # Ollama replies with JSON; the generated text is in the "response" field
     return response.json()["response"]
 
+def cited_pages(text):
+    """Page numbers the model cited, e.g. '(Page 12)' -> {12}."""
+    return {int(n) for n in re.findall(r"[Pp]age\s+(\d+)", text)}
+
 def answer(question, results):
     """Full answer step: refuse early if nothing relevant was retrieved, otherwise ask the LLM."""
     # results are sorted best first, so results[0] is the closest chunk
     top_score = results[0][1] if results else 0.0
     if top_score < SIMILARITY_THRESHOLD:
         # skip the LLM entirely: nothing relevant, nothing to hallucinate from
-        return {"answer": REFUSAL, "pages": [], "refused": True, "top_score": round(top_score, 3)}
+        return {
+            "answer": REFUSAL,
+            "pages": [],
+            "unverified_citations": [],
+            "refused": True,
+            "top_score": round(top_score, 3),
+        }
     text = generate(build_prompt(question, results))
+    retrieved = {chunk["page"] for chunk, score in results}
     return {
         "answer": text,
-        "pages": sorted({chunk["page"] for chunk, score in results}),
+        "pages": sorted(retrieved),
+        # pages the model cited that we never gave it: likely made up
+        "unverified_citations": sorted(cited_pages(text) - retrieved),
         "refused": False,
         "top_score": round(top_score, 3),
     }
