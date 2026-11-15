@@ -18,7 +18,7 @@ SIMILARITY_THRESHOLD = 0.35
 
 # local LLM served by Ollama
 OLLAMA_URL = "http://localhost:11434/api/generate"
-OLLAMA_MODEL = "llama3:8b"
+OLLAMA_MODEL = "llama3.2:3b"  # 3B fits in 8 GB RAM; llama3:8b swapped to disk (30-90 s per answer)
 OLLAMA_TIMEOUT = 120  # seconds
 
 # folders created at runtime (both are in .gitignore)
