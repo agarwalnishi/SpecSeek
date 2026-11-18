@@ -4,10 +4,11 @@ import os
 
 import faiss
 
+from app.chunk import chunk_pages
 from app.config import CACHE_DIR
 from app.extract import extract_pages
-from app.chunk import chunk_pages
 from app.index import build_index
+
 
 def file_hash(path):
     """SHA-256 fingerprint of a file. Same bytes always give the same hash."""
@@ -43,6 +44,10 @@ def load(file_id):
     return index, chunks
 
 
+class EmptyDocument(Exception):
+    """Raised when a PDF has no extractable text, e.g. a scanned image."""
+
+
 def get_or_build(pdf_path):
     """Load a PDF's index from cache, or build and cache it.
     Returns (file_id, index, chunks, was_cached)."""
@@ -52,6 +57,9 @@ def get_or_build(pdf_path):
         index, chunks = cached
         return file_id, index, chunks, True
     chunks = chunk_pages(extract_pages(pdf_path))
+    # scanned PDFs have no text layer, so there's nothing to embed
+    if not chunks:
+        raise EmptyDocument("No text found in this PDF. Scanned PDFs need OCR, which isn't supported yet.")
     index = build_index(chunks)
     save(file_id, index, chunks)
     return file_id, index, chunks, False

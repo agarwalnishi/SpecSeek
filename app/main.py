@@ -1,0 +1,90 @@
+import os
+import shutil
+import time
+
+from fastapi import FastAPI, File, HTTPException, UploadFile
+from pydantic import BaseModel, Field
+
+from app.cache import EmptyDocument, get_or_build, load
+from app.config import EMBED_MODEL, OLLAMA_MODEL, UPLOAD_DIR
+from app.index import search
+from app.llm import LLMUnavailable, answer
+
+app = FastAPI(
+    title="SpecSeek",
+    description="Ask questions about electronic component datasheets and get answers with page citations.",
+)
+
+# documents loaded in memory: doc_id (file hash) -> (index, chunks)
+documents = {}
+
+
+@app.get("/health")
+def health():
+    """Quick check that the server is up, and which models it's configured with."""
+    return {"status": "ok", "llm": OLLAMA_MODEL, "embedding_model": EMBED_MODEL}
+
+
+# plain def (not async): FastAPI runs it in a thread pool, so slow indexing doesn't block other requests
+@app.post("/upload")
+def upload(file: UploadFile = File(...)):
+    """Upload a datasheet PDF. Returns a doc_id to use with /ask."""
+    # basename stops path traversal like "../../app/main.py"
+    filename = os.path.basename(file.filename or "")
+    if not filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF files are supported.")
+
+    # every real PDF starts with "%PDF-"; a renamed .txt or image doesn't
+    header = file.file.read(5)
+    file.file.seek(0)  # rewind so the full file still gets saved below
+    if header != b"%PDF-":
+        raise HTTPException(status_code=400, detail="File is not a valid PDF.")
+
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    path = os.path.join(UPLOAD_DIR, filename)
+    with open(path, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+
+    start = time.time()
+    try:
+        doc_id, index, chunks, was_cached = get_or_build(path)
+    except EmptyDocument as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    documents[doc_id] = (index, chunks)
+    return {
+        "doc_id": doc_id,
+        "filename": filename,
+        "chunks": len(chunks),
+        "cached": was_cached,
+        "seconds": round(time.time() - start, 2),
+    }
+
+
+class AskRequest(BaseModel):
+    # a doc_id is a sha-256 hash: exactly 64 hex characters.
+    # this also blocks path tricks like "../" from reaching the cache folder
+    doc_id: str = Field(..., pattern=r"^[0-9a-f]{64}$")
+    # pydantic rejects empty or huge questions with a 422 before our code runs
+    question: str = Field(..., min_length=3, max_length=500)
+
+
+@app.post("/ask")
+def ask(req: AskRequest):
+    """Ask a question about an uploaded datasheet. Returns an answer with page citations."""
+    if req.doc_id not in documents:
+        # the server may have restarted since the upload: try the disk cache before giving up
+        cached = load(req.doc_id)
+        if cached is None:
+            raise HTTPException(status_code=404, detail="Unknown doc_id. Upload the datasheet first.")
+        documents[req.doc_id] = cached
+    index, chunks = documents[req.doc_id]
+
+    start = time.time()
+    results = search(index, chunks, req.question)
+    try:
+        result = answer(req.question, results)
+    except LLMUnavailable as e:
+        # 503 = the service we depend on (Ollama) is down
+        raise HTTPException(status_code=503, detail=str(e))
+    result["seconds"] = round(time.time() - start, 2)
+    return result
