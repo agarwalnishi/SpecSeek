@@ -26,12 +26,23 @@ def health():
 
 
 # plain def (not async): FastAPI runs it in a thread pool, so slow indexing doesn't block other requests
+# plain def (not async): FastAPI runs it in a thread pool, so slow indexing doesn't block other requests
 @app.post("/upload")
 def upload(file: UploadFile = File(...)):
     """Upload a datasheet PDF. Returns a doc_id to use with /ask."""
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
     # basename stops path traversal like "../../app/main.py"
-    path = os.path.join(UPLOAD_DIR, os.path.basename(file.filename))
+    filename = os.path.basename(file.filename or "")
+    if not filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF files are supported.")
+
+    # every real PDF starts with "%PDF-"; a renamed .txt or image doesn't
+    header = file.file.read(5)
+    file.file.seek(0)  # rewind so the full file still gets saved below
+    if header != b"%PDF-":
+        raise HTTPException(status_code=400, detail="File is not a valid PDF.")
+
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    path = os.path.join(UPLOAD_DIR, filename)
     with open(path, "wb") as f:
         shutil.copyfileobj(file.file, f)
 
@@ -40,7 +51,7 @@ def upload(file: UploadFile = File(...)):
     documents[doc_id] = (index, chunks)
     return {
         "doc_id": doc_id,
-        "filename": file.filename,
+        "filename": filename,
         "chunks": len(chunks),
         "cached": was_cached,
         "seconds": round(time.time() - start, 2),
