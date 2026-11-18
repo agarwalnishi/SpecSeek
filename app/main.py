@@ -58,7 +58,7 @@ def upload(file: UploadFile = File(...)):
     }
 
 class AskRequest(BaseModel):
-    doc_id: str
+     doc_id: str = Field(..., pattern=r"^[0-9a-f]{64}$")
     # pydantic rejects empty or huge questions with a 422 before our code runs
     question: str = Field(..., min_length=3, max_length=500)
 
