@@ -5,7 +5,7 @@ import time
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
-from app.cache import get_or_build
+from app.cache import get_or_build, load
 from app.config import EMBED_MODEL, OLLAMA_MODEL, UPLOAD_DIR
 from app.index import search
 from app.llm import LLMUnavailable, answer
@@ -56,7 +56,10 @@ class AskRequest(BaseModel):
 def ask(req: AskRequest):
     """Ask a question about an uploaded datasheet. Returns an answer with page citations."""
     if req.doc_id not in documents:
-        raise HTTPException(status_code=404, detail="Unknown doc_id. Upload the datasheet first.")
+        cached = load(req.doc_id)
+        if cached is None:
+            raise HTTPException(status_code=404, detail="Unknown doc_id. Upload the datasheet first.")
+        documents[req.doc_id] = cached
     index, chunks = documents[req.doc_id]
 
     start = time.time()
