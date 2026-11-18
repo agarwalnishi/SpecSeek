@@ -2,10 +2,13 @@ import os
 import shutil
 import time
 
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, HTTPException, UploadFile
+from pydantic import BaseModel, Field
 
 from app.cache import get_or_build
 from app.config import EMBED_MODEL, OLLAMA_MODEL, UPLOAD_DIR
+from app.index import search
+from app.llm import LLMUnavailable, answer
 
 app = FastAPI(
     title="SpecSeek",
@@ -42,3 +45,26 @@ def upload(file: UploadFile = File(...)):
         "cached": was_cached,
         "seconds": round(time.time() - start, 2),
     }
+
+class AskRequest(BaseModel):
+    doc_id: str
+    # pydantic rejects empty or huge questions with a 422 before our code runs
+    question: str = Field(..., min_length=3, max_length=500)
+
+
+@app.post("/ask")
+def ask(req: AskRequest):
+    """Ask a question about an uploaded datasheet. Returns an answer with page citations."""
+    if req.doc_id not in documents:
+        raise HTTPException(status_code=404, detail="Unknown doc_id. Upload the datasheet first.")
+    index, chunks = documents[req.doc_id]
+
+    start = time.time()
+    results = search(index, chunks, req.question)
+    try:
+        result = answer(req.question, results)
+    except LLMUnavailable as e:
+        # 503 = the service we depend on (Ollama) is down
+        raise HTTPException(status_code=503, detail=str(e))
+    result["seconds"] = round(time.time() - start, 2)
+    return result
