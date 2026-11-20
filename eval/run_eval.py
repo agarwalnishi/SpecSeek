@@ -22,13 +22,19 @@ def hit_rate(index, chunks, questions, k=TOP_K):
     return hits, misses
 
 
+CHUNK_SIZES = [400, 800, 1200]
+
 if __name__ == "__main__":
     data = json.load(open("eval/questions.json", encoding="utf-8"))
-    chunks = chunk_pages(extract_pages(data["datasheet"]))
-    index = build_index(chunks)
+    questions = data["in_scope"]
+    n = len(questions)
+    # extract once, re-chunk and re-index for each size
+    pages = extract_pages(data["datasheet"])
 
-    hits, misses = hit_rate(index, chunks, data["in_scope"])
-    n = len(data["in_scope"])
-    print(f"hit rate@{TOP_K}: {hits}/{n} = {hits / n:.0%}")
-    for question, wanted, got in misses:
-        print(f"MISS: {question} | expected pages {wanted} | got {got}")
+    for size in CHUNK_SIZES:
+        chunks = chunk_pages(pages, size=size)
+        index = build_index(chunks)
+        hits, misses = hit_rate(index, chunks, questions)
+        print(f"\nchunk size {size:>4}: {len(chunks):>4} chunks | hit rate@{TOP_K}: {hits}/{n} = {hits / n:.0%}")
+        for question, wanted, got in misses:
+            print(f"   MISS: {question} | expected {wanted} | got {got}")
