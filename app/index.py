@@ -5,7 +5,17 @@ from sentence_transformers import SentenceTransformer
 from app.config import EMBED_MODEL, TOP_K
 
 # loaded once when this file is first imported (takes a few seconds)
-model = SentenceTransformer(EMBED_MODEL)
+def load_model():
+    """Load the embedding model from the local cache if it's there.
+    Skips HuggingFace's online update checks, which took ~30 s per startup on a slow connection."""
+    try:
+        return SentenceTransformer(EMBED_MODEL, local_files_only=True)
+    except Exception:
+        # first run on a new machine: not downloaded yet, so fetch it
+        return SentenceTransformer(EMBED_MODEL)
+
+
+model = load_model()
 
 
 def embed(texts):
