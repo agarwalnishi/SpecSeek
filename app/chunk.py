@@ -1,9 +1,18 @@
+import re
 from app.config import CHUNK_SIZE, CHUNK_OVERLAP, MIN_CHUNK_LEN
 
+# a "dot leader" is 5+ dots in a row, solid "....." or spaced ". . . . ."
+# a "dot leader" is 8+ solid dots "........" or strictly spaced dots ". . . . ."
+# (strict on purpose: "... ... ..." ellipses in code examples must not match)
+DOT_LEADER = re.compile(r"\.{8,}|(?:\. ){5,}")
+
+
 def is_toc_chunk(text):
-    """Table of contents lines look like 'Internal Voltage Reference . . . . . 43'.
-    They contain keywords but no real information, so they pollute search results."""
-    return text.count(". .") > 10
+    """Table of contents lines look like 'Internal Voltage Reference . . . . . 43'
+    or 'CERTIFICATE..........i'. They contain keywords but no real information,
+    so they pollute search results."""
+    dots_in_leaders = sum(m.count(".") for m in DOT_LEADER.findall(text))
+    return dots_in_leaders > 10
 
 def chunk_pages(pages, size=CHUNK_SIZE, overlap=CHUNK_OVERLAP):
     """Split each page's text into overlapping chunks. Each chunk keeps its page number."""

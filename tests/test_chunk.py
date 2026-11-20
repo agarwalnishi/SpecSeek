@@ -38,3 +38,14 @@ def test_table_of_contents_is_detected_and_skipped():
 def test_normal_text_is_not_mistaken_for_toc():
     text = "Notes: 1. Values with the Power Reduction Register enabled. 2. Typical values at 25C. " * 5
     assert not is_toc_chunk(text)
+
+def test_toc_with_solid_dot_leaders_is_detected():
+    # found in a real report: "CERTIFICATE......................i"
+    toc = "TRAINING COMPLETION CERTIFICATE" + "." * 60 + "i OFFER LETTER" + "." * 60 + "ii"
+    assert is_toc_chunk(toc)
+
+def test_ellipses_in_code_are_not_mistaken_for_toc():
+    # real text from the ATmega328P datasheet, page 50 (interrupt vector table)
+    text = ("jmp USART_RXC ; USART, RX Complete Handler xxx ... ... ... ... "
+            "Table 11-2. Reset and Interrupt Vectors Placement ... ... ... ...")
+    assert not is_toc_chunk(text)
