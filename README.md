@@ -137,3 +137,23 @@ Smaller chunks split answers from their headings (watchdog table, I2C speed, sle
 | Server startup | ~10 s |
 
 Llama 3 8B was tried first but took 30 to 90 s per short answer because it did not fit comfortably in 8 GB of RAM. Llama 3.2 3B fits and is several times faster.
+
+
+
+## Limitations
+
+- **Spec summary pages retrieve poorly.** The page 1-2 Features list packs dozens of specs into each chunk, so its embedding matches nothing strongly. Most of the remaining eval misses (voltage range, PWM count, timer count, write endurance) are here.
+- **Number-only tables** (like the brown-out level table) give the embedding model little text to match.
+- **No OCR:** scanned PDFs are rejected with a 400. Some symbols (for example ×) are lost during text extraction.
+- **The citation check catches invented page numbers, not wrong facts on real pages.** An answer can cite a correct page and still leave out details.
+- **Temperature 0 is not fully deterministic** on CPU; repeated runs can word answers differently.
+- **Single process, local use:** loaded documents live in memory (rebuilt from the disk cache after a restart), and uploaded files are kept in `uploads/` indefinitely.
+- **The eval is small:** one datasheet and 25 questions. Treat the numbers as a sanity check, not a benchmark.
+
+## Next steps
+
+- **Hybrid search (BM25 + embeddings)** so exact terms like "PWM channels" or "brown-out" can match spec lists and tables directly
+- Table-aware extraction for register and electrical characteristic tables
+- OCR for scanned datasheets
+- Streaming answers so the first words appear before the full 25 to 40 s
+- Evaluate on more datasheets (an STM32 or ESP32 part) to check the chunk size choice generalizes
