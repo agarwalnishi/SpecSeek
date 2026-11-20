@@ -1,0 +1,195 @@
+{
+  "datasheet": "datasheets/atmega328p.pdf",
+  "in_scope": [
+    {
+      "question": "What PWM resolutions are available in phase correct PWM mode?",
+      "pages": [
+        103
+      ],
+      "answer": "8, 9 or 10 bit fixed, or 2 to 16 bit set by ICR1/OCR1A"
+    },
+    {
+      "question": "Which resolutions can Timer1 use in fast PWM mode?",
+      "pages": [
+        101
+      ],
+      "answer": "8, 9 or 10 bit fixed, or 2 to 16 bit set by ICR1/OCR1A"
+    },
+    {
+      "question": "What supply voltage range does this chip run on?",
+      "pages": [
+        2
+      ],
+      "answer": "2.7V to 5.5V"
+    },
+    {
+      "question": "What is the highest clock speed it supports, and at what supply voltage?",
+      "pages": [
+        2,
+        260
+      ],
+      "answer": "16MHz at 4.5-5.5V (8MHz at 2.7-5.5V)"
+    },
+    {
+      "question": "Across what temperature range is this automotive part rated?",
+      "pages": [
+        2,
+        5
+      ],
+      "answer": "-40°C to +125°C"
+    },
+    {
+      "question": "How much program flash memory does the chip have?",
+      "pages": [
+        1
+      ],
+      "answer": "32K bytes"
+    },
+    {
+      "question": "How much internal SRAM is available?",
+      "pages": [
+        1,
+        18
+      ],
+      "answer": "2K bytes (2048 bytes)"
+    },
+    {
+      "question": "How large is the EEPROM?",
+      "pages": [
+        1
+      ],
+      "answer": "1K bytes"
+    },
+    {
+      "question": "How many times can the flash and the EEPROM be rewritten?",
+      "pages": [
+        1
+      ],
+      "answer": "10,000 cycles flash, 100,000 cycles EEPROM"
+    },
+    {
+      "question": "How many general purpose I/O pins can be programmed?",
+      "pages": [
+        2
+      ],
+      "answer": "23 I/O lines"
+    },
+    {
+      "question": "How many PWM outputs does the chip provide?",
+      "pages": [
+        1
+      ],
+      "answer": "Six PWM channels"
+    },
+    {
+      "question": "How many timer/counters are there and how wide are they?",
+      "pages": [
+        1
+      ],
+      "answer": "Two 8-bit and one 16-bit timer/counter"
+    },
+    {
+      "question": "What is the resolution of the analog to digital converter?",
+      "pages": [
+        1,
+        205
+      ],
+      "answer": "10-bit"
+    },
+    {
+      "question": "Which reference voltages can the ADC be configured to use?",
+      "pages": [
+        205,
+        211
+      ],
+      "answer": "AVCC, internal 1.1V reference, or external AREF pin"
+    },
+    {
+      "question": "How long does a single ADC conversion take?",
+      "pages": [
+        205,
+        210
+      ],
+      "answer": "65 to 260µs; 13 ADC clock cycles for a normal conversion, 25 for the first"
+    },
+    {
+      "question": "How can the serial port's transfer rate be doubled?",
+      "pages": [
+        146
+      ],
+      "answer": "Set the U2Xn bit in UCSRnA (asynchronous mode only)"
+    },
+    {
+      "question": "What is the fastest data transfer speed of the I2C / 2-wire interface?",
+      "pages": [
+        173
+      ],
+      "answer": "Up to 400kHz"
+    },
+    {
+      "question": "When the SPI runs as a slave, what is the highest clock it is guaranteed to work at?",
+      "pages": [
+        142
+      ],
+      "answer": "fosc/4"
+    },
+    {
+      "question": "What timeout periods can the watchdog timer be set to?",
+      "pages": [
+        48
+      ],
+      "answer": "16ms up to 8.0s (at VCC = 5V)"
+    },
+    {
+      "question": "Which low power sleep modes does the chip support?",
+      "pages": [
+        1,
+        35
+      ],
+      "answer": "Six: idle, ADC noise reduction, power-save, power-down, standby, extended standby"
+    },
+    {
+      "question": "What events can cause the microcontroller to reset?",
+      "pages": [
+        40
+      ],
+      "answer": "Four: power-on reset, external reset, watchdog system reset, brown-out reset"
+    },
+    {
+      "question": "At what voltage levels can the brown-out detector trigger?",
+      "pages": [
+        262
+      ],
+      "answer": "Typical 2.7V or 4.3V, selected by BODLEVEL fuses"
+    },
+    {
+      "question": "What clock does a brand new chip run on out of the box?",
+      "pages": [
+        25,
+        29
+      ],
+      "answer": "Internal RC oscillator at 8.0MHz divided by 8 (CKDIV8), so 1.0MHz"
+    },
+    {
+      "question": "What is the maximum DC current a single I/O pin can handle?",
+      "pages": [
+        258
+      ],
+      "answer": "40.0mA"
+    },
+    {
+      "question": "What sizes can the boot loader section be configured to?",
+      "pages": [
+        239
+      ],
+      "answer": "256, 512, 1024 or 2048 words"
+    }
+  ],
+  "out_of_scope": [
+    "Who won the cricket world cup?",
+    "What is the ADC sampling rate of the STM32F103?",
+    "How do I install Python on Windows?",
+    "What is the clock speed of a Raspberry Pi 4?",
+    "What is the capital of Australia?"
+  ]
+}
