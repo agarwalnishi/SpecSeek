@@ -1,0 +1,4 @@
+[tool.pytest.ini_options]
+# let tests import "app" from the project folder (same fix as in Snip)
+pythonpath = ["."]
+testpaths = ["tests"]
